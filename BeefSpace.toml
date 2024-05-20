@@ -1,0 +1,5 @@
+FileVersion = 1
+Projects = {Oregano = {Path = "."}}
+
+[Workspace]
+StartupProject = "Oregano"

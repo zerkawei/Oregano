@@ -45,9 +45,12 @@ public enum TransitionResult
 
 public class Cursor
 {
-	public StringView String;
-	public State      Current;
-	public int        Position;
+	public StringView       String;
+	public State            Current;
+	public CompactList<int> Positions ~ _.Dispose();
+
+	[Inline]
+	public ref int Position => ref Positions[Positions.Count - 1];
 
 	public (int Start, int End)[] Groups ~ delete _;
 
@@ -55,7 +58,8 @@ public class Cursor
  	{
 		 String   = s;
 		 Current  = start;
- 		 Position = position;
+		 Positions = .();
+ 		 Positions.Add(position);
 		 Groups   = new .[groupCount];
 	}
 }
@@ -115,3 +119,20 @@ public class Backreference : Transition
 	}
 }
 
+public class LookaheadEntry : Transition
+{
+	public override TransitionResult Matches(Cursor c)
+	{
+		c.Positions.Add(c.Position);
+		return .Accepted(0);
+	}
+}
+
+public class LookaheadExit : Transition
+{
+	public override TransitionResult Matches(Cursor c)
+	{
+		c.Positions.RemoveAt(c.Positions.Count - 1);
+		return .Accepted(0);
+	}
+}

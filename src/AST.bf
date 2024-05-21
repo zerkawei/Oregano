@@ -109,3 +109,21 @@ public class ConcatExpr : IExpression
 		return .(lfsm.Start, rfsm.End);
 	}
 }
+
+public class LookaheadExpr : IExpression
+{
+	public IExpression Child;
+
+	public FSM Compile()
+	{
+		let start = new State();
+		let end   = new State();
+		let fsm   = Child.Compile();
+
+		start.Transitions.Add(new LookaheadEntry(){Target = fsm.Start});
+		fsm.End.Transitions.Add(new LookaheadExit(){Target = end});
+
+		return .(start, end);
+	}
+}
+

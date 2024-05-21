@@ -1,5 +1,5 @@
 FileVersion = 1
-Projects = {Oregano = {Path = "."}}
+Projects = {Oregano = {Path = "."}, OreganoTest = {Path = "OreganoTest"}}
 
 [Workspace]
-StartupProject = "Oregano"
+StartupProject = "OreganoTest"

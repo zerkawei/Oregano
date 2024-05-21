@@ -4,30 +4,30 @@ namespace Oregano;
 
 public class Regex
 {
-	private FSM compiledFsm;
+	private FSM compiledFsm ~ _.Dispose();
 	private int groupCount;
 
-	private List<Cursor>       cursors;
-	private List<StringView[]> matches;
+	private List<Cursor>       cursors = new .() ~ DeleteContainerAndItems!(_);
+	private List<StringView[]> matches = new .() ~ DeleteContainerAndItems!(_);
 
-
-	private IEnumerable<StringView[]> MatchAll(StringView s)
+	public List<StringView[]> MatchAll(StringView s)
 	{
-		cursors.Add(new .(s, compiledFsm.Start, 0, groupCount));
-
 		int startPos = 0;
 		while(startPos < s.Length)
 		{
-			while(Step(startPos, out startPos)) {}
+			bool matched = false;
+			cursors.ClearAndDeleteItems();
+			cursors.Add(new .(s, compiledFsm.Start, startPos, groupCount));
+			while(!(matched = Step(ref startPos)) && cursors.Count > 0) {}
+
+			if(!matched) startPos++;
 		}
 
 		return matches;
-	}	
+	}
 
-	private bool Step(int startPos, out int lastPos)
+	private bool Step(ref int startPos)
 	{
-		lastPos = startPos + 1;
-
 		var i = 0;
 		var foundMatch = false;
 		while(i < cursors.Count && !foundMatch)
@@ -39,13 +39,13 @@ public class Regex
 				{
 					foundMatch = true;
 					let match = new StringView[c.Groups.Count + 1];
-					match[0] = c.String[startPos...c.Position];
+					match[0] = c.String[startPos..<c.Position];
 					for(let g < c.Groups.Count)
 					{
-						match[g+1] = c.String[c.Groups[g].Start...c.Groups[g].End];
+						match[g+1] = c.String[c.Groups[g].Start..<c.Groups[g].End];
 					}
 					matches.Add(match);
-					lastPos = c.Position;
+					startPos = c.Position;
 				}
 				cursors.RemoveAt(i);
 				delete c;
@@ -61,6 +61,8 @@ public class Regex
 
 	private bool StepCursor(Cursor c)
  	{
+		if(c.Position >= c.String.Length) return false;
+
 		var hasTransitioned = false;
 		let cursorStart     = c.Position; 
         for(let t in c.Current.Transitions)
@@ -85,5 +87,3 @@ public class Regex
 		return hasTransitioned;
 	}
 }
-
-private enum 

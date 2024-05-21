@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 namespace Oregano;
 
-public struct FSM
+public struct FSM : IDisposable
 {
 	public State Start;
 	public State End;
@@ -12,11 +12,29 @@ public struct FSM
 		Start = start;
 		End   = end;
 	}
+
+	public void Dispose()
+	{
+		HashSet<State> visited = scope .();
+		void Visit(State s)
+		{
+			visited.Add(s);
+			for(let t in s.Transitions)
+			{
+				if(!visited.Contains(t.Target))
+				{
+					Visit(t.Target);
+				}
+			}
+		}
+		Visit(Start);
+		for(let s in visited) { delete s; }
+	}
 }
 
 public class State
 {
-	public List<Transition> Transitions ~ DeleteContainerAndItems!(_);
+	public List<Transition> Transitions = new .() ~ DeleteContainerAndItems!(_);
 }
 
 public enum TransitionResult
@@ -88,6 +106,12 @@ public class GroupExit : Transition
 public class Backreference : Transition
 {
 	public int Group;
-	public override TransitionResult Matches(Cursor c) => (c.String[c.Position...].StartsWith(c.String[c.Groups[Group].Start...c.Groups[Group].End])) ? .Accepted(c.Groups[Group].Start - c.Groups[Group].End) : .Rejected;
+	public override TransitionResult Matches(Cursor c)
+	{
+		let substr  = c.String[c.Position...];
+		let capture = c.String[(c.Groups[Group].Start)..<(c.Groups[Group].End)];
+
+		return (substr.StartsWith(capture)) ? .Accepted(c.Groups[Group].End - c.Groups[Group].Start) : .Rejected;
+	}
 }
 

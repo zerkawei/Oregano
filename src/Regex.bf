@@ -17,8 +17,8 @@ public class Regex
 		{
 			bool matched = false;
 			cursors.ClearAndDeleteItems();
-			cursors.Add(new .(s, compiledFsm.Start, startPos, groupCount));
-			while(!(matched = Step(ref startPos)) && cursors.Count > 0) {}
+			cursors.Add(new .(compiledFsm.Start, startPos, groupCount));
+			while(!(matched = Step(ref startPos, s)) && cursors.Count > 0) {}
 
 			if(!matched) startPos++;
 		}
@@ -26,23 +26,23 @@ public class Regex
 		return matches;
 	}
 
-	private bool Step(ref int startPos)
+	private bool Step(ref int startPos, StringView s)
 	{
 		var i = 0;
 		var foundMatch = false;
 		while(i < cursors.Count && !foundMatch)
 		{
 			var c = cursors[i];
-			if(!StepCursor(c))
+			if(!StepCursor(c, s))
 			{
 				if(c.Current == compiledFsm.End)
 				{
 					foundMatch = true;
 					let match = new StringView[c.Groups.Count + 1];
-					match[0] = c.String[startPos..<c.Position];
+					match[0] = s[startPos..<c.Position];
 					for(let g < c.Groups.Count)
 					{
-						match[g+1] = c.String[c.Groups[g].Start..<c.Groups[g].End];
+						match[g+1] = s[c.Groups[g].Start..<c.Groups[g].End];
 					}
 					matches.Add(match);
 					startPos = c.Position;
@@ -59,25 +59,24 @@ public class Regex
 		return foundMatch;
 	}
 
-	private bool StepCursor(Cursor c)
+	private bool StepCursor(Cursor c, StringView s)
  	{
-		if(c.Position >= c.String.Length) return false;
+		if(c.Position >= s.Length) return false;
 
 		var hasTransitioned = false;
 		let cursorStart     = c.Position; 
         for(let t in c.Current.Transitions)
 		{
-		    if(t.Matches(c) case .Accepted(let count))
+		    if(t.Matches(c, s) case .Accepted(let count))
 			{
 				if(hasTransitioned)
 				{
-					let nCur = new Cursor(c.String, t.Target, cursorStart + count, c.Groups.Count);
-					c.Groups.CopyTo(nCur.Groups);
+					let nCur = new Cursor(c, t.Target, c.Reverse ? cursorStart - count : cursorStart + count);
 					cursors.Add(nCur);
   				}
 				else
 				{
-					c.Position += count;
+					c.Position += c.Reverse ? -count : count;
 					c.Current   = t.Target;
 
 					hasTransitioned = true;

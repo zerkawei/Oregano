@@ -178,3 +178,44 @@ public class ClassMatch : Transition
 		return CharClass.Contains(s[c.Position]) ? .Accepted(1) : .Rejected;
 	}
 }
+
+public class LineStart : Transition
+{
+	public override TransitionResult Matches(Cursor c, StringView s)
+	{
+		return (c.Position == 0 || s[c.Position-1] == '\n') ? .Accepted(0) : .Rejected;
+	}
+}
+
+public class LineEnd : Transition
+{
+	public override TransitionResult Matches(Cursor c, StringView s)
+	{
+		return (c.Position == s.Length || s[c.Position] == '\n') ? .Accepted(0) : .Rejected;
+	}
+}
+
+public class StringStart : Transition
+{
+	public override TransitionResult Matches(Cursor c, StringView s)
+	{
+		return (c.Position == 0) ? .Accepted(0) : .Rejected;
+	}
+}
+
+public class StringEnd : Transition
+{
+	public override TransitionResult Matches(Cursor c, StringView s)
+	{
+		return (c.Position == s.Length) ? .Accepted(0) : .Rejected;
+	}
+}
+
+public class WordBoundary : Transition
+{
+	public override TransitionResult Matches(Cursor c, StringView s)
+	{
+		return (((c.Position == 0 || s[c.Position-1].IsWhiteSpace) && CharacterClass.Word.Contains(s[c.Position])) || ((c.Position == s.Length || s[c.Position].IsWhiteSpace) && CharacterClass.Word.Contains(s[c.Position-1]))) ?
+			.Accepted(0) : .Rejected;
+	}
+}

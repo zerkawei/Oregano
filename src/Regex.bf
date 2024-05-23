@@ -35,48 +35,64 @@ public class Regex
 		int startPos = 0;
 		while(startPos < s.Length)
 		{
-			bool matched = false;
+			Cursor candidate = null;
+
 			cursors.ClearAndDeleteItems();
 			cursors.Add(new .(compiledFsm.Start, startPos, groupCount));
-			while(!(matched = Step(ref startPos, s)) && cursors.Count > 0) {}
 
-			if(!matched) startPos++;
+			while(cursors.Count > 0)
+			{
+				Step(ref candidate, s);
+			}
+
+			if(candidate != null)
+			{
+				let match = new StringView[candidate.Groups.Count + 1];
+				match[0] = s[startPos..<candidate.Position];
+				for(let g < candidate.Groups.Count)
+				{
+					match[g+1] = s[candidate.Groups[g].Start..<candidate.Groups[g].End];
+				}
+				matches.Add(match);
+				startPos = candidate.Position;
+
+				delete candidate;
+			}
+			else { startPos++; }
 		}
 
 		return matches;
 	}
 
-	private bool Step(ref int startPos, StringView s)
+	private void Step(ref Cursor candidate, StringView s)
 	{
 		var i = 0;
-		var foundMatch = false;
-		while(i < cursors.Count && !foundMatch)
+		
+		while(i < cursors.Count)
 		{
 			var c = cursors[i];
-			if(!StepCursor(c, s))
+Step:		if(!StepCursor(c, s))
 			{
 				if(c.Current == compiledFsm.End)
 				{
-					foundMatch = true;
-					let match = new StringView[c.Groups.Count + 1];
-					match[0] = s[startPos..<c.Position];
-					for(let g < c.Groups.Count)
+					if(candidate == null || candidate.Position < c.Position)
 					{
-						match[g+1] = s[c.Groups[g].Start..<c.Groups[g].End];
+						if(candidate != null) delete candidate;
+						candidate = c;
 					}
-					matches.Add(match);
-					startPos = c.Position;
+					else
+					{
+						defer :Step delete c;
+					}
+				}
+				else
+				{
+					defer :Step delete c;
 				}
 				cursors.RemoveAt(i);
-				delete c;
 			}
-			else
-			{
-				i++;
-			}
+			else { i++; }
 		}
-
-		return foundMatch;
 	}
 
 	private bool StepCursor(Cursor c, StringView s)

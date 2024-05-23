@@ -1,5 +1,5 @@
 using System;
-namespace Oregano;
+namespace Oregano.Compiler;
 
 public interface IExpression
 {
@@ -23,7 +23,7 @@ public class StringExpr : IExpression
 
 public class StarExpr : IExpression
 {
-	public IExpression Child;
+	public IExpression Child ~ delete _;
 
 	public FSM Compile()
 	{
@@ -40,10 +40,27 @@ public class StarExpr : IExpression
 	}
 }
 
+public class PlusExpr : IExpression
+{
+	public IExpression Child ~ delete _;
+
+	public FSM Compile()
+	{
+		let end   = new State();
+		let fsm   = Child.Compile();
+
+		fsm.End.Transitions.Add(new Epsilon(){Target = fsm.Start});
+		fsm.End.Transitions.Add(new Epsilon(){Target = end});
+
+		return .(fsm.Start, end);
+	}
+}
+
+
 public class OrExpr : IExpression
 {
-	public IExpression Left;
-	public IExpression Right;
+	public IExpression Left  ~ delete _;
+	public IExpression Right ~ delete _;
 
 	public FSM Compile()
 	{
@@ -64,7 +81,7 @@ public class OrExpr : IExpression
 public class GroupExpr : IExpression
 {
 	public int         Group;
-	public IExpression Child;
+	public IExpression Child ~ delete _;
 
 	public FSM Compile()
 	{
@@ -96,8 +113,8 @@ public class BackreferenceExpr : IExpression
 
 public class ConcatExpr : IExpression
 {
-	public IExpression Left;
-	public IExpression Right;
+	public IExpression Left  ~ delete _;
+	public IExpression Right ~ delete _;
 
 	public FSM Compile()
 	{
@@ -112,7 +129,7 @@ public class ConcatExpr : IExpression
 
 public class LookaheadExpr : IExpression
 {
-	public IExpression Child;
+	public IExpression Child ~ delete _;
 
 	public FSM Compile()
 	{
@@ -137,6 +154,42 @@ public class CharClassExpr : IExpression
 		let end   = new State();
 
 		start.Transitions.Add(new ClassMatch(){Target = end, CharClass = CharClass});
+
+		return .(start, end);
+	}
+}
+
+public class AnchorExpr : IExpression
+{
+	public enum AnchorType
+	{
+		LineStart,
+		LineEnd,
+		StringStart,
+		StringEnd,
+		WordBoundary
+	}
+
+	public AnchorType Type;
+
+	public FSM Compile()
+	{
+		let start = new State();
+		let end   = new State();
+
+		switch(Type)
+		{
+		case .LineStart:
+			start.Transitions.Add(new LineStart(){Target = end});
+		case .LineEnd:
+			start.Transitions.Add(new LineEnd(){Target = end});
+		case .StringStart:
+			start.Transitions.Add(new StringStart(){Target = end});
+		case .StringEnd:
+			start.Transitions.Add(new StringEnd(){Target = end});
+		case .WordBoundary:
+			start.Transitions.Add(new WordBoundary(){Target = end});
+		}
 
 		return .(start, end);
 	}

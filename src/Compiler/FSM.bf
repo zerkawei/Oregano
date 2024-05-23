@@ -1,6 +1,6 @@
 using System;
 using System.Collections;
-namespace Oregano;
+namespace Oregano.Compiler;
 
 public struct FSM : IDisposable
 {
@@ -45,7 +45,7 @@ public enum TransitionResult
 
 public class Cursor
 {
-	public bool Reverse = true;
+	public bool Reverse = false;
 	public State Current;
 	public CompactList<int> Positions = .() ~ _.Dispose();
 	public (int Start, int End)[] Groups    ~ delete _;
@@ -76,6 +76,10 @@ public class Cursor
 	}
 
 	public bool MatchesString(StringView source, StringView match) => Reverse ? source[...Position].EndsWith(match) : source[Position...].StartsWith(match);
+	public mixin BoundaryCheck(StringView s)
+	{
+		if(Position >= s.Length || Position < 0) return TransitionResult.Rejected;
+	}
 }
 
 public abstract class Transition
@@ -84,21 +88,11 @@ public abstract class Transition
 	public abstract TransitionResult Matches(Cursor c, StringView s);
 }
 
+// EPSILONS
+
 public class Epsilon : Transition
 {
 	public override TransitionResult Matches(Cursor c, StringView s) => .Accepted(0);
-}
-
-public class CharacterMatch : Transition
-{
-	public char8 Character;
-	public override TransitionResult Matches(Cursor c, StringView s) => (s[c.Position] == Character) ? .Accepted(1) : .Rejected;
-}
-
-public class StringMatch : Transition
-{
-	public StringView String;
-	public override TransitionResult Matches(Cursor c, StringView s) => (c.MatchesString(s, String)) ? .Accepted(String.Length) : .Rejected;
 }
 
 public class GroupEntry : Transition
@@ -118,16 +112,6 @@ public class GroupExit : Transition
 	{
 		c.Groups[Group].End = c.Position;
 		return .Accepted(0);
-	}
-}
-
-public class Backreference : Transition
-{
-	public int Group;
-	public override TransitionResult Matches(Cursor c, StringView s)
-	{
-		let capture = s[(c.Groups[Group].Start)..<(c.Groups[Group].End)];
-		return (c.MatchesString(s, capture)) ? .Accepted(c.Groups[Group].End - c.Groups[Group].Start) : .Rejected;
 	}
 }
 
@@ -169,15 +153,7 @@ public class LookbehindExit : Transition
 	}
 }
 
-public class ClassMatch : Transition
-{
-	public CharacterClass CharClass;
-
-	public override TransitionResult Matches(Cursor c, StringView s)
-	{
-		return CharClass.Contains(s[c.Position]) ? .Accepted(1) : .Rejected;
-	}
-}
+// CONDITIONAL EPSILONS
 
 public class LineStart : Transition
 {
@@ -219,3 +195,47 @@ public class WordBoundary : Transition
 			.Accepted(0) : .Rejected;
 	}
 }
+
+// MATCHERS
+
+public class CharacterMatch : Transition
+{
+	public char8 Character;
+	public override TransitionResult Matches(Cursor c, StringView s)
+	{
+		c.BoundaryCheck!(s);
+		return (s[c.Position] == Character) ? .Accepted(1) : .Rejected;
+	}
+}
+
+public class StringMatch : Transition
+{
+	public StringView String;
+	public override TransitionResult Matches(Cursor c, StringView s)
+	{
+		c.BoundaryCheck!(s);
+		return (c.MatchesString(s, String)) ? .Accepted(String.Length) : .Rejected;
+	}
+}
+
+public class Backreference : Transition
+{
+	public int Group;
+	public override TransitionResult Matches(Cursor c, StringView s)
+	{
+		c.BoundaryCheck!(s);
+		let capture = s[(c.Groups[Group].Start)..<(c.Groups[Group].End)];
+		return (c.MatchesString(s, capture)) ? .Accepted(c.Groups[Group].End - c.Groups[Group].Start) : .Rejected;
+	}
+}
+
+public class ClassMatch : Transition
+{
+	public CharacterClass CharClass;
+	public override TransitionResult Matches(Cursor c, StringView s)
+	{
+		c.BoundaryCheck!(s);
+		return CharClass.Contains(s[c.Position]) ? .Accepted(1) : .Rejected;
+	}
+}
+

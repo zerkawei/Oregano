@@ -1,5 +1,6 @@
 using System.Collections;
 using System;
+using Oregano.Compiler;
 namespace Oregano;
 
 public class Regex
@@ -7,8 +8,27 @@ public class Regex
 	private FSM compiledFsm ~ _.Dispose();
 	private int groupCount;
 
-	private List<Cursor>       cursors = new .() ~ DeleteContainerAndItems!(_);
-	private List<StringView[]> matches = new .() ~ DeleteContainerAndItems!(_);
+	private List<Cursor>         cursors = new .() ~ DeleteContainerAndItems!(_);
+	private List<StringView[]>   matches = new .() ~ DeleteContainerAndItems!(_);
+	private List<CharacterClass> classes ~ if(_ != null) DeleteContainerAndItems!(_);
+
+	private this() {}
+
+	public static Regex Compile(StringView regex)
+ 	{
+		let p = scope Parser(regex);
+		if(p.ParseExpressions() case .Ok(let ast))
+		{
+			let res = new Regex();
+			res.compiledFsm = ast.Compile();
+			res.groupCount  = p.GroupCount;
+			res.classes     = p.Classes;
+
+			delete ast;
+			return res;
+		}
+		return null;
+	}
 
 	public List<StringView[]> MatchAll(StringView s)
 	{
@@ -61,8 +81,6 @@ public class Regex
 
 	private bool StepCursor(Cursor c, StringView s)
  	{
-		if(c.Position >= s.Length) return false;
-
 		var hasTransitioned = false;
 		let cursorStart     = c.Position; 
         for(let t in c.Current.Transitions)

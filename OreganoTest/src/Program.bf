@@ -6,6 +6,7 @@ class Program
 {
 	public static void Main()
 	{
+		/*
 		let ast = scope ConcatExpr()
 		{
 			Left = scope GroupExpr()
@@ -27,6 +28,9 @@ class Program
 		let regex = scope Regex();
 		regex.[Friend]compiledFsm = ast.Compile();
 		regex.[Friend]groupCount  = 1;
+		*/
+
+		let regex = Regex.Compile("([\"'])a\\0");
 
 		for(let m in regex.MatchAll("\"a\" 'a'"))
 		{

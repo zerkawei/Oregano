@@ -102,8 +102,9 @@ public class Parser
 	{
 		if(Current.IsDigit)
 		{
+			let group = int(Current - '0');
 			Position++;
-			return new BackreferenceExpr(){Group = Current - '0'};
+			return new BackreferenceExpr(){Group = group};
 		} 
 		if(reserved.Contains(Current))
 		{

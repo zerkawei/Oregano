@@ -6,31 +6,7 @@ class Program
 {
 	public static void Main()
 	{
-		/*
-		let ast = scope ConcatExpr()
-		{
-			Left = scope GroupExpr()
-			{
-				Group = 0,
-				Child = scope OrExpr()
-				{
-					Left  = scope StringExpr(){ String = "\"" },
-					Right = scope StringExpr(){ String = "'"}
-				}
-			},
-			Right = scope ConcatExpr()
-			{
-				Left  = scope StringExpr(){ String = "a" },
-				Right = scope BackreferenceExpr(){ Group = 0 }
-			}
-		};
-
-		let regex = scope Regex();
-		regex.[Friend]compiledFsm = ast.Compile();
-		regex.[Friend]groupCount  = 1;
-		*/
-
-		let regex = Regex.Compile("([\"'])a\\0");
+		let regex = Regex.Compile("([\"'])a+\\0");
 
 		for(let m in regex.MatchAll("\"a\" 'a'"))
 		{
@@ -39,6 +15,8 @@ class Program
 				Console.WriteLine(g);
 			}
 		}
+
+		delete regex;
 
 		Console.Read();
 	}

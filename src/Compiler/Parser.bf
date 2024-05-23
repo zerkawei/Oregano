@@ -64,10 +64,10 @@ public class Parser
 		case '.':
 			Position++;
 			return new CharClassExpr(){CharClass = CharacterClass.Dot};
-		case '$':
+		case '^':
 			Position++;
 			return new AnchorExpr(){Type = .LineStart};
-		case '^':
+		case '$':
 			Position++;
 			return new AnchorExpr(){Type = .LineEnd};
 		case '(':

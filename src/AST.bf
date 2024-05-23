@@ -127,3 +127,17 @@ public class LookaheadExpr : IExpression
 	}
 }
 
+public class CharClassExpr : IExpression
+{
+	public CharacterClass CharClass;
+
+	public FSM Compile()
+	{
+		let start = new State();
+		let end   = new State();
+
+		start.Transitions.Add(new ClassMatch(){Target = end, CharClass = CharClass});
+
+		return .(start, end);
+	}
+}

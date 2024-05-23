@@ -168,3 +168,13 @@ public class LookbehindExit : Transition
 		return .Accepted(0);
 	}
 }
+
+public class ClassMatch : Transition
+{
+	public CharacterClass CharClass;
+
+	public override TransitionResult Matches(Cursor c, StringView s)
+	{
+		return CharClass.Contains(s[c.Position]) ? .Accepted(1) : .Rejected;
+	}
+}

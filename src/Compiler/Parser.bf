@@ -215,7 +215,7 @@ public class Parser
 	public Result<IExpression> ParseString()
 	{
 		let start = Position;
-		while(!reserved.Contains(Regex[Position])) Position++;
+		while(!reserved.Contains(Current)) Position++;
 
 		if(start == Position) return .Err;
 		return new StringExpr(){String = Regex[start..<Position]};

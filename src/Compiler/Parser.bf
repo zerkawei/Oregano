@@ -209,28 +209,12 @@ public class Parser
 		case 'Z':
 			Position++;
 			return new AnchorExpr(){Type = .StringEnd};
-		case 'b':
-			Position++;
-			return new AnchorExpr(){Type = .WordBoundary};
-		case 'd':
-			Position++;
-			return new CharClassExpr(){CharClass = CharacterClass.Digit};
-		case 'D':
-			Position++;
-			return new CharClassExpr(){CharClass = CharacterClass.NonDigit};
-		case 'w':
-			Position++;
-			return new CharClassExpr(){CharClass = CharacterClass.Word};
-		case 'W':
-			Position++;
-			return new CharClassExpr(){CharClass = CharacterClass.NonWord};
-		case 's':
-			Position++;
-			return new CharClassExpr(){CharClass = CharacterClass.Whitespace};
-		case 'S':
-			Position++;
-			return new CharClassExpr(){CharClass = CharacterClass.NonWhitespace};
 		default:
+			if(CharacterClass.Shorthands.TryGetValue(Current, let charClass))
+			{
+				Position++;
+				return new CharClassExpr(){CharClass = charClass};
+			}
 			return .Err;
 		}
 	}
@@ -262,7 +246,43 @@ public class Parser
  	{
 		if(Current == ']') return false;
 
-		let start = Try!(ParseChar());
+		char8 start = ?;
+		if(Current == '\\')
+		{
+			Position++;
+			if(CharacterClass.Shorthands.TryGetValue(Current, let charClass))
+			{
+				Position++;
+				for(let c in charClass.Characters)
+				{
+					chars.Add(c);
+				}
+				for(let r in charClass.Ranges)
+				{
+					ranges.Add(r);
+				}
+				return true;
+			}
+			switch(Current)
+			{
+			case 't':
+				start = '\t';
+			case 'n':
+				start = '\n';
+			case 'r':
+				start = '\r';
+			case '\\':
+				start = '\\';
+			case '-':
+				start = '-';
+			case ']':
+				start = ']';
+			default:
+				return .Err;
+			}
+		}
+		else { start = Current; }
+
 		Position++;
 		if(Current == '-')
 		{
@@ -282,16 +302,22 @@ public class Parser
 			switch(Current)
 			{
 			case 't':
+				Position++;
 				return '\t';
 			case 'n':
+				Position++;
 				return '\n';
 			case 'r':
+				Position++;
 				return '\r';
 			case '\\':
+				Position++;
 				return '\\';
 			case '-':
+				Position++;
 				return '-';
 			case ']':
+				Position++;
 				return ']';
 			default:
 				return .Err;

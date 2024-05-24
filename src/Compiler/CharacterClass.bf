@@ -11,9 +11,21 @@ public class CharacterClass
 	public static Self Whitespace    = new .(new .(' ', '\f', '\n', '\r', '\t', '\v', '\xa0'), new .()) ~ delete _;
 	public static Self NonWhitespace = new .(new .(' ', '\f', '\n', '\r', '\t', '\v', '\xa0'), new .(), true) ~ delete _;
 
+	public static Dictionary<char8, Self> Shorthands = new .() ~ delete _;
+
 	public bool Negated;
 	public char8[] Characters ~ delete _;
 	public CharacterRange[] Ranges ~ delete _;
+
+	public static this()
+	{
+		Shorthands.Add('d', Digit);
+		Shorthands.Add('D', NonDigit);
+		Shorthands.Add('w', Word);
+		Shorthands.Add('W', NonWord);
+		Shorthands.Add('s', Whitespace);
+		Shorthands.Add('S', NonWhitespace);
+	}
 
 	public this(char8[] chars, CharacterRange[] ranges, bool negated = false)
 	{

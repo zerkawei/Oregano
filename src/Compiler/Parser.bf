@@ -196,8 +196,7 @@ public class Parser
 		} 
 		if(reserved.Contains(Current))
 		{
-			Position++;
-			return new StringExpr(){String = Regex[Position...Position]};
+			return new CharExpr(){Char = Regex[Position++]};
 		}
 		switch(Current)
 		{

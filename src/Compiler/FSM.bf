@@ -37,17 +37,11 @@ public class State
 	public List<Transition> Transitions = new .() ~ DeleteContainerAndItems!(_);
 }
 
-public enum TransitionResult
-{
-	case Accepted(int count);
-	case Rejected;
-}
-
 public class Cursor
 {
 	public struct SavedPos
 	{
-		[Bitfield<uint>(.Public, .Bits(63), "Position")]
+		[Bitfield<uint>(.Public, .Bits(62), "Position")]
 		[Bitfield<bool>(.Public, .Bits(1), "Reverse")]
 		private int data;
 
@@ -78,9 +72,9 @@ public class Cursor
 		Positions.Add(.(position, false));
 	}
 
-	public this(Cursor parent, State target, int position)
+	public this(Cursor parent)
 	{
-		Current = target;
+		Current = parent.Current;
 		Groups  = new .[parent.Groups.Count];
 
 		parent.Groups.CopyTo(Groups);
@@ -89,153 +83,139 @@ public class Cursor
 			Positions.Add(pos);
 		}
 
-		Position = position;
+		for(let i in parent.RepeatCount)
+		{
+			RepeatCount.Add(i);
+		}
 	}
 
 	public bool MatchesString(StringView source, StringView match) => Reverse ? source[...Position].EndsWith(match) : source[Position...].StartsWith(match);
-	public mixin BoundaryCheck(StringView s)
-	{
-		if(Position >= s.Length || Position < 0) return TransitionResult.Rejected;
-	}
+	public bool Inbounds(StringView s) => (Position < s.Length && Position >= 0);
 }
 
 public abstract class Transition
 {
 	public State Target;
-	public abstract TransitionResult Matches(Cursor c, StringView s);
+	public abstract int Step { get; }
+	public abstract bool Matches(Cursor c, StringView s);
+	public virtual void Apply(Cursor c)
+	{
+		c.Position += c.Reverse ? -Step : Step;
+		c.Current = Target;
+	}
 }
 
 // EPSILONS
 
 public class Epsilon : Transition
 {
-	public override TransitionResult Matches(Cursor c, StringView s) => .Accepted(0);
+	public override int Step => 0;
+	public override bool Matches(Cursor c, StringView s) => true;
 }
 
-public class GroupEntry : Transition
+public class GroupEntry : Epsilon
 {
 	public int Group;
-	public override TransitionResult Matches(Cursor c, StringView s)
+	public override void Apply(Cursor c)
 	{
+		base.Apply(c);
 		c.Groups[Group].Start = c.Position;
-		return .Accepted(0);
 	}
 }
 
-public class GroupExit : Transition
+public class GroupExit : Epsilon
 {
 	public int Group;
-	public override TransitionResult Matches(Cursor c, StringView s)
+	public override void Apply(Cursor c)
 	{
+		base.Apply(c);
 		c.Groups[Group].End = c.Position;
-		return .Accepted(0);
 	}
 }
 
-public class LookaheadEntry : Transition
+public class LookaheadEntry : Epsilon
 {
-	public override TransitionResult Matches(Cursor c, StringView s)
+	public override void Apply(Cursor c)
 	{
+		base.Apply(c);
 		c.Positions.Add(.(c.Position, false));
-		return .Accepted(0);
 	}
 }
 
-public class LookaroundExit : Transition
+public class LookaroundExit : Epsilon
 {
-	public override TransitionResult Matches(Cursor c, StringView s)
+	public override void Apply(Cursor c)
 	{
+		base.Apply(c);
 		c.Positions.RemoveAt(c.Positions.Count - 1);
-		return .Accepted(0);
 	}
 }
 
-public class LookbehindEntry : Transition
+public class LookbehindEntry : Epsilon
 {
-	public override TransitionResult Matches(Cursor c, StringView s)
+	public override void Apply(Cursor c)
 	{
+		base.Apply(c);
 		c.Positions.Add(.(c.Position, true));
-		return .Accepted(0);
 	}
 }
 
-public class RepeatEntry : Transition
+public class RepeatEntry : Epsilon
 {
-	public override TransitionResult Matches(Cursor c, StringView s)
+	public override void Apply(Cursor c)
 	{
+		base.Apply(c);
 		c.RepeatCount.Add(1);
-		return .Accepted(0);
 	}
 }
 
 // CONDITIONAL EPSILONS
 
-public class LineStart : Transition
+public class LineStart : Epsilon
 {
-	public override TransitionResult Matches(Cursor c, StringView s)
-	{
-		return (c.Position == 0 || s[c.Position-1] == '\n') ? .Accepted(0) : .Rejected;
-	}
+	public override bool Matches(Cursor c, StringView s) => (c.Position == 0 || s[c.Position-1] == '\n');
 }
 
-public class LineEnd : Transition
+public class LineEnd : Epsilon
 {
-	public override TransitionResult Matches(Cursor c, StringView s)
-	{
-		return (c.Position == s.Length || s[c.Position] == '\n') ? .Accepted(0) : .Rejected;
-	}
+	public override bool Matches(Cursor c, StringView s) => (c.Position == s.Length || s[c.Position] == '\n');
 }
 
-public class StringStart : Transition
+public class StringStart : Epsilon
 {
-	public override TransitionResult Matches(Cursor c, StringView s)
-	{
-		return (c.Position == 0) ? .Accepted(0) : .Rejected;
-	}
+	public override bool Matches(Cursor c, StringView s) => (c.Position == 0);
 }
 
-public class StringEnd : Transition
+public class StringEnd : Epsilon
 {
-	public override TransitionResult Matches(Cursor c, StringView s)
-	{
-		return (c.Position == s.Length) ? .Accepted(0) : .Rejected;
-	}
+	public override bool Matches(Cursor c, StringView s) => (c.Position == s.Length);
 }
 
-public class WordBoundary : Transition
+public class WordBoundary : Epsilon
 {
-	public override TransitionResult Matches(Cursor c, StringView s)
-	{
-		return (((c.Position == 0 || s[c.Position-1].IsWhiteSpace) && CharacterClass.Word.Contains(s[c.Position])) || ((c.Position == s.Length || s[c.Position].IsWhiteSpace) && CharacterClass.Word.Contains(s[c.Position-1]))) ?
-			.Accepted(0) : .Rejected;
-	}
+	public override bool Matches(Cursor c, StringView s)
+		=> (((c.Position == 0 || s[c.Position-1].IsWhiteSpace) && CharacterClass.Word.Contains(s[c.Position])) || ((c.Position == s.Length || s[c.Position].IsWhiteSpace) && CharacterClass.Word.Contains(s[c.Position-1])));
 }
 
-public class MinimumCardinality : Transition
+public class MinimumCardinality : Epsilon
 {
 	public int lowerBound;
-	public override TransitionResult Matches(Cursor c, StringView s)
+	public override bool Matches(Cursor c, StringView s) => (c.RepeatCount[c.RepeatCount.Count - 1] >= lowerBound);
+	public override void Apply(Cursor c)
 	{
-		if(c.RepeatCount[c.RepeatCount.Count - 1] >= lowerBound)
-		{
-			c.RepeatCount.RemoveAt(c.RepeatCount.Count - 1);
-			return .Accepted(0);
-		}
-		return .Rejected;
+		base.Apply(c);
+		c.RepeatCount.RemoveAt(c.RepeatCount.Count - 1);
 	}
 }
 
-public class MaximumCardinality : Transition
+public class MaximumCardinality : Epsilon
 {
 	public int upperBound;
-	public override TransitionResult Matches(Cursor c, StringView s)
+	public override bool Matches(Cursor c, StringView s) => (c.RepeatCount[c.RepeatCount.Count - 1] <= upperBound);
+	public override void Apply(Cursor c)
 	{
-		if(c.RepeatCount[c.RepeatCount.Count - 1] <= upperBound)
-		{
-			c.RepeatCount[c.RepeatCount.Count - 1]++;
-			return .Accepted(0);
-		}
-		return .Rejected;
+		base.Apply(c);
+		c.RepeatCount[c.RepeatCount.Count - 1]++;
 	}
 }
 
@@ -244,41 +224,34 @@ public class MaximumCardinality : Transition
 public class CharacterMatch : Transition
 {
 	public char8 Character;
-	public override TransitionResult Matches(Cursor c, StringView s)
-	{
-		c.BoundaryCheck!(s);
-		return (s[c.Position] == Character) ? .Accepted(1) : .Rejected;
-	}
+	public override int Step => 1;
+	public override bool Matches(Cursor c, StringView s) => c.Inbounds(s) && (s[c.Position] == Character);
 }
 
 public class StringMatch : Transition
 {
 	public StringView String;
-	public override TransitionResult Matches(Cursor c, StringView s)
-	{
-		c.BoundaryCheck!(s);
-		return (c.MatchesString(s, String)) ? .Accepted(String.Length) : .Rejected;
-	}
+	public override int Step => String.Length;
+	public override bool Matches(Cursor c, StringView s) => c.Inbounds(s) && (c.MatchesString(s, String));
 }
 
 public class Backreference : Transition
 {
 	public int Group;
-	public override TransitionResult Matches(Cursor c, StringView s)
+	public override int Step => 0;
+	public override bool Matches(Cursor c, StringView s) => c.Inbounds(s) && (c.MatchesString(s, s[(c.Groups[Group].Start)..<(c.Groups[Group].End)]));
+	public override void Apply(Cursor c)
 	{
-		c.BoundaryCheck!(s);
-		let capture = s[(c.Groups[Group].Start)..<(c.Groups[Group].End)];
-		return (c.MatchesString(s, capture)) ? .Accepted(c.Groups[Group].End - c.Groups[Group].Start) : .Rejected;
+		let step = c.Groups[Group].End - c.Groups[Group].Start;
+		c.Position += c.Reverse ? -step : step;
+		c.Current = Target;
 	}
 }
 
 public class ClassMatch : Transition
 {
 	public CharacterClass CharClass;
-	public override TransitionResult Matches(Cursor c, StringView s)
-	{
-		c.BoundaryCheck!(s);
-		return CharClass.Contains(s[c.Position]) ? .Accepted(1) : .Rejected;
-	}
+	public override int Step => 1;
+	public override bool Matches(Cursor c, StringView s) => c.Inbounds(s) && CharClass.Contains(s[c.Position]);
 }
 

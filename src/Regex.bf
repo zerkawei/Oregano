@@ -97,26 +97,26 @@ Step:		if(!StepCursor(c, s))
 
 	private bool StepCursor(Cursor c, StringView s)
  	{
-		var hasTransitioned = false;
-		let cursorStart     = c.Position; 
+		Transition firstTransition = null;
+
         for(let t in c.Current.Transitions)
 		{
-		    if(t.Matches(c, s) case .Accepted(let count))
+		    if(t.Matches(c, s))
 			{
-				if(hasTransitioned)
+				if(firstTransition != null)
 				{
-					let nCur = new Cursor(c, t.Target, c.Reverse ? cursorStart - count : cursorStart + count);
+					let nCur = new Cursor(c);
+					t.Apply(nCur);
 					cursors.Add(nCur);
   				}
 				else
 				{
-					c.Position += c.Reverse ? -count : count;
-					c.Current   = t.Target;
-
-					hasTransitioned = true;
+					firstTransition = t;
 				}
 			}
 		}
-		return hasTransitioned;
+
+		firstTransition?.Apply(c);
+		return firstTransition != null;
 	}
 }

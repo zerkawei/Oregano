@@ -6,6 +6,20 @@ public interface IExpression
 	public FSM Compile();
 }
 
+public class CharExpr : IExpression
+{
+	public char8 Char;
+	public FSM Compile()
+	{
+		let start = new State();
+		let end   = new State();
+
+		start.Transitions.Add(new CharacterMatch(){Target = end, Character = Char});
+
+		return .(start, end);
+	}
+}
+
 public class StringExpr : IExpression
 {
 	public StringView String;

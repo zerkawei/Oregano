@@ -138,7 +138,7 @@ public class LookaheadExpr : IExpression
 		let fsm   = Child.Compile();
 
 		start.Transitions.Add(new LookaheadEntry(){Target = fsm.Start});
-		fsm.End.Transitions.Add(new LookaheadExit(){Target = end});
+		fsm.End.Transitions.Add(new LookaroundExit(){Target = end});
 
 		return .(start, end);
 	}

@@ -45,24 +45,40 @@ public enum TransitionResult
 
 public class Cursor
 {
-	public bool Reverse = false;
+	public struct SavedPos
+	{
+		[Bitfield<uint>(.Public, .Bits(63), "Position")]
+		[Bitfield<bool>(.Public, .Bits(1), "Reverse")]
+		private int data;
+
+		public this(int pos, bool rev)
+		{
+			data = ?;
+			Position = (uint)pos;
+			Reverse = rev;
+		}
+	}
+
 	public State Current;
-	public CompactList<int> Positions = .() ~ _.Dispose();
+	public CompactList<SavedPos> Positions = .() ~ _.Dispose();
 	public (int Start, int End)[] Groups    ~ delete _;
 
-	[Inline]
-	public ref int Position => ref Positions[Positions.Count - 1];
+	public int Position
+	{
+		get => (int)Positions[Positions.Count - 1].Position;
+		set => Positions[Positions.Count - 1].Position = (uint)value;
+	}
+	public bool Reverse => Positions[Positions.Count - 1].Reverse;
 
 	public this(State start, int position, int groupCount)
  	{
 		Current = start;
 		Groups  = new .[groupCount];
-		Positions.Add(position);
+		Positions.Add(.(position, false));
 	}
 
 	public this(Cursor parent, State target, int position)
 	{
-		Reverse = parent.Reverse;
 		Current = target;
 		Groups  = new .[parent.Groups.Count];
 
@@ -119,12 +135,12 @@ public class LookaheadEntry : Transition
 {
 	public override TransitionResult Matches(Cursor c, StringView s)
 	{
-		c.Positions.Add(c.Position);
+		c.Positions.Add(.(c.Position, false));
 		return .Accepted(0);
 	}
 }
 
-public class LookaheadExit : Transition
+public class LookaroundExit : Transition
 {
 	public override TransitionResult Matches(Cursor c, StringView s)
 	{
@@ -137,18 +153,7 @@ public class LookbehindEntry : Transition
 {
 	public override TransitionResult Matches(Cursor c, StringView s)
 	{
-		c.Reverse = true;
-		c.Positions.Add(c.Position);
-		return .Accepted(0);
-	}
-}
-
-public class LookbehindExit : Transition
-{
-	public override TransitionResult Matches(Cursor c, StringView s)
-	{
-		c.Reverse = false;
-		c.Positions.RemoveAt(c.Positions.Count - 1);
+		c.Positions.Add(.(c.Position, true));
 		return .Accepted(0);
 	}
 }

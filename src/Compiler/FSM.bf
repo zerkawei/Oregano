@@ -61,6 +61,7 @@ public class Cursor
 
 	public State Current;
 	public CompactList<SavedPos> Positions = .() ~ _.Dispose();
+	public CompactList<int> RepeatCount = .() ~ _.Dispose();
 	public (int Start, int End)[] Groups    ~ delete _;
 
 	public int Position
@@ -158,6 +159,15 @@ public class LookbehindEntry : Transition
 	}
 }
 
+public class RepeatEntry : Transition
+{
+	public override TransitionResult Matches(Cursor c, StringView s)
+	{
+		c.RepeatCount.Add(1);
+		return .Accepted(0);
+	}
+}
+
 // CONDITIONAL EPSILONS
 
 public class LineStart : Transition
@@ -198,6 +208,34 @@ public class WordBoundary : Transition
 	{
 		return (((c.Position == 0 || s[c.Position-1].IsWhiteSpace) && CharacterClass.Word.Contains(s[c.Position])) || ((c.Position == s.Length || s[c.Position].IsWhiteSpace) && CharacterClass.Word.Contains(s[c.Position-1]))) ?
 			.Accepted(0) : .Rejected;
+	}
+}
+
+public class MinimumCardinality : Transition
+{
+	public int lowerBound;
+	public override TransitionResult Matches(Cursor c, StringView s)
+	{
+		if(c.RepeatCount[c.RepeatCount.Count - 1] >= lowerBound)
+		{
+			c.RepeatCount.RemoveAt(c.RepeatCount.Count - 1);
+			return .Accepted(0);
+		}
+		return .Rejected;
+	}
+}
+
+public class MaximumCardinality : Transition
+{
+	public int upperBound;
+	public override TransitionResult Matches(Cursor c, StringView s)
+	{
+		if(c.RepeatCount[c.RepeatCount.Count - 1] <= upperBound)
+		{
+			c.RepeatCount[c.RepeatCount.Count - 1]++;
+			return .Accepted(0);
+		}
+		return .Rejected;
 	}
 }
 

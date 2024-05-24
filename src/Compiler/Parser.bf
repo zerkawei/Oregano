@@ -4,7 +4,7 @@ namespace Oregano.Compiler;
 
 public class Parser
 {
-	public static char8[?] reserved = .('.','$','^','\\','(',')','*','+','[',']','|','\0');
+	public static char8[?] reserved = .('.','$','^','\\','(',')','*','+','[',']','|','{','}','?','\0');
 
 	public StringView Regex;
 	public int Position;
@@ -52,9 +52,45 @@ public class Parser
 		case '+':
 			Position++;
 			return new PlusExpr(){Child = child};
+		case '?':
+			Position++;
+			return new OptionalExpr(){Child = child};
+		case '{':
+			Position++;
+			return ParseCardinality(child);
 		default:
 			return child;
 		}
+	}
+
+	public Result<IExpression> ParseCardinality(IExpression child)
+	{
+		let start = ParseInt();
+		if(Current == '}')
+		{
+			Position++;
+			return new CardinalityExpr(){Child = child, Cardinality = .(start, start)};
+		}
+		else if(Current != ',') { return .Err; }
+		Position++;
+
+		let end = ParseInt();
+
+		if(Current != '}') return .Err;
+		Position++;
+
+		return new CardinalityExpr(){Child = child, Cardinality = .(start, (end == 0) ? int.MaxValue : end)};
+	}
+
+	public int ParseInt()
+	{
+		var value = 0;
+		while(Current.IsDigit)
+		{
+			value = (10 * value) + (Current - '0');
+			Position++;
+		}
+		return value;
 	}
 
 	public Result<IExpression> ParseExpression()

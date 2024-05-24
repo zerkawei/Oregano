@@ -56,6 +56,43 @@ public class PlusExpr : IExpression
 	}
 }
 
+public class OptionalExpr : IExpression
+{
+	public IExpression Child ~ delete _;
+
+	public FSM Compile()
+	{
+		let fsm = Child.Compile();
+
+		fsm.Start.Transitions.Add(new Epsilon(){Target = fsm.End});
+
+		return fsm;
+	}
+}
+
+public class CardinalityExpr : IExpression
+{
+	public IExpression Child ~ delete _;
+	public Range       Cardinality;
+
+	public FSM Compile()
+	{
+		let start = new State();
+		let end   = new State();
+		let fsm   = Child.Compile();
+
+		if(Cardinality.Start == 0)
+		{
+			start.Transitions.Add(new Epsilon(){Target = end});
+		}
+
+		start.Transitions.Add(new RepeatEntry(){Target = fsm.Start});
+		fsm.End.Transitions.Add(new MaximumCardinality(){upperBound = Cardinality.End, Target = fsm.Start});
+		fsm.End.Transitions.Add(new MinimumCardinality(){lowerBound = Cardinality.Start, Target = end});
+
+		return .(start, end);
+	}
+}
 
 public class OrExpr : IExpression
 {

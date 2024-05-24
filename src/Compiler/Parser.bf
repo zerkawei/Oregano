@@ -122,6 +122,58 @@ public class Parser
 
 	public Result<IExpression> ParseGroup()
 	{
+		if(Current == '?')
+		{
+			Position++;
+		    switch(Current)
+			{
+			case ':':
+				Position++;
+				return ParseNonCapturingGroup();
+			case '=':
+				Position++;
+				return ParseLookahead();
+			case '<':
+				Position++;
+				return ParseLookbehind();
+			default:
+				return .Err;
+			}
+		}
+		return ParseCapturingGroup();
+	}
+
+	public Result<IExpression> ParseNonCapturingGroup()
+	{
+		let inner = Try!(ParseExpressions());
+		if(Current != ')')
+		{
+			delete inner;
+			return .Err;
+		}
+		Position++;
+		return inner;
+	}
+
+	public Result<IExpression> ParseLookahead()
+	{
+		let inner = Try!(ParseExpressions());
+		if(Current != ')')
+		{
+			delete inner;
+			return .Err;
+		}
+		Position++;
+		return new LookaheadExpr(){Child = inner};
+	}
+
+	public Result<IExpression> ParseLookbehind()
+	{
+		return .Err; // Unsupported currently
+	}
+
+	public Result<IExpression> ParseCapturingGroup()
+	{
 		let group = GroupCount;
 		GroupCount++;
 		let inner = Try!(ParseExpressions());

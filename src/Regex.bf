@@ -29,8 +29,33 @@ public class Regex
 		}
 		return null;
 	}
+ 
+	private Result<Match> MatchFrom(StringView s, ref int start)
+	{
+		let automaton = scope Automaton(compiledFsm, new .(compiledFsm.Start, start, groupCount), s);
 
-	public Result<Match> Matches(StringView s) => (scope Automaton(compiledFsm, new .(compiledFsm.Start, 0, groupCount), s)).Matches();
+		let res = automaton.Matches();
+		if(res case .Ok(let m))
+		{
+			matches.Add(m);
+			start = m.Captures[0].End;
+		}
+		else { start++; }
+
+		return res;
+	} 
+
+	public Result<Match> Matches(StringView s)
+	{
+		matches.ClearAndDisposeItems();
+
+		int startPos = 0;
+		Result<Match> res = ?;
+		while(startPos < s.Length && (res = MatchFrom(s, ref startPos)) case .Err) {}
+
+		return res;
+	}
+
 	public List<Match> MatchAll(StringView s)
 	{
 		matches.ClearAndDisposeItems();
@@ -38,13 +63,7 @@ public class Regex
 		int startPos = 0;
 		while(startPos < s.Length)
 		{
-			let automaton = scope Automaton(compiledFsm, new .(compiledFsm.Start, startPos, groupCount), s);
-			if(automaton.Matches() case .Ok(let m))
-			{
-				matches.Add(m);
-				startPos = m.Captures[0].End;
-			}
-			else { startPos++; }
+			MatchFrom(s, ref startPos);
 		}
 
 		return matches;

@@ -28,7 +28,11 @@ public class Cursor
 		get => (int)Positions[Positions.Count - 1].Position;
 		set => Positions[Positions.Count - 1].Position = (uint)value;
 	}
-	public bool Reverse => Positions[Positions.Count - 1].Reverse;
+	public bool Reverse
+	{
+		get => Positions[Positions.Count - 1].Reverse;
+		set => Positions[Positions.Count - 1].Reverse = value;
+	}
 
 	public this(State start, int position, int groupCount)
  	{

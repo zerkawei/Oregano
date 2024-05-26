@@ -41,12 +41,33 @@ public class GroupExit : Epsilon
 	}
 }
 
-public class LookaheadEntry : Epsilon
+public class LookaroundEntry : Epsilon
 {
+	public bool Reverse;
 	public override void Apply(Cursor c)
 	{
 		base.Apply(c);
-		c.Positions.Add(.(c.Position, false));
+		c.Positions.Add(.(c.Position, Reverse));
+	}
+}
+
+public class NegativeLookaround : Epsilon
+{
+	public bool Reverse;
+	public FSM  Inner ~ _.Dispose();
+
+	public override bool Matches(Cursor c, StringView s)
+	{
+		let nCur = new Cursor(c);
+		nCur.Reverse = Reverse;
+
+		let automaton = scope Automaton(Inner, nCur, s);
+		if(automaton.Matches() case .Ok(let val))
+		{
+			val.Dispose();
+			return false;
+		}
+		return true;
 	}
 }
 
@@ -56,15 +77,6 @@ public class LookaroundExit : Epsilon
 	{
 		base.Apply(c);
 		c.Positions.RemoveAt(c.Positions.Count - 1);
-	}
-}
-
-public class LookbehindEntry : Epsilon
-{
-	public override void Apply(Cursor c)
-	{
-		base.Apply(c);
-		c.Positions.Add(.(c.Position, true));
 	}
 }
 

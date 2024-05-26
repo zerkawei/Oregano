@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using internal Oregano.Automata;
 namespace Oregano.Automata;
 
 public struct FSM : IDisposable
@@ -28,7 +29,35 @@ public struct FSM : IDisposable
 			}
 		}
 		Visit(Start);
-		for(let s in visited) { delete s; }
+		visited.ClearAndDelete();
+	}
+
+	public void Reverse()
+	{
+		HashSet<State> visited = scope .();
+		List<(State s, Transition t)> pairs = scope .();
+		void Visit(State s)
+		{
+			visited.Add(s);
+			for(let t in s.Transitions)
+			{
+				pairs.Add((s,t));
+				if(!visited.Contains(t.Target))
+				{
+					Visit(t.Target);
+				}
+			}
+			s.Transitions.Clear();
+		}
+		Visit(Start);
+
+		for(let pair in pairs)
+		{
+			pair.t.Target.Transitions.Add(pair.t);
+			pair.t.Target = pair.s;
+		}
+
+		visited.ClearAndDelete();
 	}
 }
 

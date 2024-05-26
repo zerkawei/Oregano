@@ -179,8 +179,10 @@ public class ConcatExpr : IExpression
 	}
 }
 
-public class LookaheadExpr : IExpression
+public class LookaroundExpr : IExpression
 {
+	public bool Behind;
+	public bool Negative;
 	public IExpression Child ~ delete _;
 
 	public FSM Compile()
@@ -189,9 +191,21 @@ public class LookaheadExpr : IExpression
 		let end   = new State();
 		let fsm   = Child.Compile();
 
-		start.Transitions.Add(new LookaheadEntry(){Target = fsm.Start});
-		fsm.End.Transitions.Add(new LookaroundExit(){Target = end});
+		if(Behind)
+		{
+			fsm.Reverse();
+		}
 
+		if(!Negative)
+		{
+			start.Transitions.Add(new LookaroundEntry(){Target = fsm.Start, Reverse = Behind});
+			fsm.End.Transitions.Add(new LookaroundExit(){Target = end});
+		}
+		else
+		{
+			start.Transitions.Add(new NegativeLookaround(){Target = end, Reverse = Behind, Inner = fsm});
+		}
+		
 		return .(start, end);
 	}
 }

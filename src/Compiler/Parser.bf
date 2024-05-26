@@ -130,14 +130,11 @@ public class Parser
 			case ':':
 				Position++;
 				return ParseNonCapturingGroup();
-			case '=':
-				Position++;
-				return ParseLookahead();
 			case '<':
 				Position++;
-				return ParseLookbehind();
+				return ParseLookaround(true);
 			default:
-				return .Err;
+				return ParseLookaround();
 			}
 		}
 		return ParseCapturingGroup();
@@ -155,8 +152,20 @@ public class Parser
 		return inner;
 	}
 
-	public Result<IExpression> ParseLookahead()
+	public Result<IExpression> ParseLookaround(bool behind = false)
 	{
+		bool negative = ?;
+		switch(Current)
+		{
+		case '=':
+			negative = false;
+		case '!':
+			negative = true;
+		default:
+			return .Err;
+		}
+		Position++;
+
 		let inner = Try!(ParseExpressions());
 		if(Current != ')')
 		{
@@ -164,12 +173,7 @@ public class Parser
 			return .Err;
 		}
 		Position++;
-		return new LookaheadExpr(){Child = inner};
-	}
-
-	public Result<IExpression> ParseLookbehind()
-	{
-		return .Err; // Unsupported currently
+		return new LookaroundExpr(){Child = inner, Behind = behind, Negative = negative};
 	}
 
 	public Result<IExpression> ParseCapturingGroup()

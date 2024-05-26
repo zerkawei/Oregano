@@ -6,18 +6,25 @@ class Program
 {
 	public static void Main()
 	{
-		let regex = Regex.Compile("([\"'])a+\\0");
+		RegexMatch("([\"'])a+\\1", "\"a\" 'aaaa'");
+		RegexMatch("<[^>]+>", "<div>Test</div>");
 
-		for(let m in regex.MatchAll("\"a\" 'a'"))
+		Console.Read();
+	}
+
+	public static void RegexMatch(StringView reg, StringView str)
+	{
+		let regex = Regex.Compile(reg);
+
+		for(let m in regex.MatchAll(str))
 		{
-			for(let g in m)
+			Console.WriteLine("Match :");
+			for(let i < m.Captures.Count)
 			{
-				Console.WriteLine(g);
+				Console.WriteLine(scope $"    Group {i}: {m[i]}");
 			}
 		}
 
 		delete regex;
-
-		Console.Read();
 	}
 }

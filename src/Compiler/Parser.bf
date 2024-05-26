@@ -174,8 +174,7 @@ public class Parser
 
 	public Result<IExpression> ParseCapturingGroup()
 	{
-		let group = GroupCount;
-		GroupCount++;
+		let group = ++GroupCount;
 		let inner = Try!(ParseExpressions());
 		if(Current != ')')
 		{

@@ -1,4 +1,5 @@
 using System;
+using Oregano.Automata;
 namespace Oregano.Compiler;
 
 public interface IExpression

@@ -1,5 +1,5 @@
 using System.Collections;
-namespace Oregano.Compiler;
+namespace Oregano;
 
 public class CharacterClass
 {

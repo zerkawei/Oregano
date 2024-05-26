@@ -47,7 +47,7 @@ public class LookaroundEntry : Epsilon
 	public override void Apply(Cursor c)
 	{
 		base.Apply(c);
-		c.Positions.Add(.(c.Position, Reverse));
+		c.Positions.Add(.(Reverse ? c.Position - 1 : c.Position, Reverse));
 	}
 }
 
@@ -60,6 +60,9 @@ public class NegativeLookaround : Epsilon
 	{
 		let nCur = new Cursor(c);
 		nCur.Reverse = Reverse;
+		nCur.Current = Inner.Start;
+
+		if(Reverse) nCur.Position--;
 
 		let automaton = scope Automaton(Inner, nCur, s);
 		if(automaton.Matches() case .Ok(let val))

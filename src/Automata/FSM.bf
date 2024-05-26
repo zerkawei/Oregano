@@ -32,7 +32,7 @@ public struct FSM : IDisposable
 		visited.ClearAndDelete();
 	}
 
-	public void Reverse()
+	public void Reverse() mut
 	{
 		HashSet<State> visited = scope .();
 		List<(State s, Transition t)> pairs = scope .();
@@ -57,7 +57,9 @@ public struct FSM : IDisposable
 			pair.t.Target = pair.s;
 		}
 
-		visited.ClearAndDelete();
+		let temp = Start;
+		Start = End;
+		End = temp;
 	}
 }
 

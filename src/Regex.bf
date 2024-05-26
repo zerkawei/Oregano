@@ -63,7 +63,7 @@ public class Regex
 		int startPos = 0;
 		while(startPos < s.Length)
 		{
-			MatchFrom(s, ref startPos);
+			let res = MatchFrom(s, ref startPos);
 		}
 
 		return matches;

@@ -8,6 +8,7 @@ class Program
 	{
 		RegexMatch("([\"'])a+\\1", "\"a\" 'aaaa'");
 		RegexMatch("<[^>]+>", "<div>Test</div>");
+		RegexMatch("(?<![$€])\\d+","Buy 99 for $2");
 
 		Console.Read();
 	}

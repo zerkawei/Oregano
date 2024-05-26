@@ -6,14 +6,14 @@ public class Cursor
 {
 	public struct SavedPos
 	{
-		[Bitfield<uint>(.Public, .Bits(62), "Position")]
+		[Bitfield<int>(.Public, .Bits(62), "Position")]
 		[Bitfield<bool>(.Public, .Bits(1), "Reverse")]
 		private int data;
 
 		public this(int pos, bool rev)
 		{
 			data = ?;
-			Position = (uint)pos;
+			Position = (int)pos;
 			Reverse = rev;
 		}
 	}
@@ -26,7 +26,7 @@ public class Cursor
 	public int Position
 	{
 		get => (int)Positions[Positions.Count - 1].Position;
-		set => Positions[Positions.Count - 1].Position = (uint)value;
+		set => Positions[Positions.Count - 1].Position = (int)value;
 	}
 	public bool Reverse
 	{

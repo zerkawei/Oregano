@@ -189,7 +189,7 @@ public class LookaroundExpr : IExpression
 	{
 		let start = new State();
 		let end   = new State();
-		let fsm   = Child.Compile();
+		var fsm   = Child.Compile();
 
 		if(Behind)
 		{

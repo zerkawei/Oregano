@@ -10,6 +10,7 @@ public class Parser
 	public int Position;
 	public int GroupCount;
 	public List<CharacterClass> Classes;
+	public Dictionary<StringView, int> NamedGroups;
 
 	public char8 Current => (Position < Regex.Length) ? Regex[Position] : '\0';
 
@@ -19,6 +20,7 @@ public class Parser
 		Position = 0;
 		GroupCount = 0;
 		Classes = new .();
+		NamedGroups = new .();
 	}
 
 	public Result<IExpression> ParseExpressions()
@@ -132,12 +134,12 @@ public class Parser
 				return ParseNonCapturingGroup();
 			case '<':
 				Position++;
-				return ParseLookaround(true);
+				return Current.IsLetter ? ParseNamedGroup() : ParseLookaround(true);
 			default:
 				return ParseLookaround();
 			}
 		}
-		return ParseCapturingGroup();
+		return ParseCapturingGroup(++GroupCount);
 	}
 
 	public Result<IExpression> ParseNonCapturingGroup()
@@ -176,9 +178,29 @@ public class Parser
 		return new LookaroundExpr(){Child = inner, Behind = behind, Negative = negative};
 	}
 
-	public Result<IExpression> ParseCapturingGroup()
+	public Result<IExpression> ParseNamedGroup()
 	{
-		let group = ++GroupCount;
+		let name = ParseName();
+
+		if(Current != '>') return .Err;
+		Position++;
+
+		int group = ?;
+		if(NamedGroups.ContainsKey(name))
+		{
+			group = NamedGroups[name];
+		}
+		else
+		{
+			group = ++GroupCount;
+			NamedGroups.Add(name, group);
+		}
+
+		return ParseCapturingGroup(group);
+	}
+
+	public Result<IExpression> ParseCapturingGroup(int group)
+	{
 		let inner = Try!(ParseExpressions());
 		if(Current != ')')
 		{
@@ -211,6 +233,14 @@ public class Parser
 		case 'Z':
 			Position++;
 			return new AnchorExpr(){Type = .StringEnd};
+		case 'k':
+			Position++;
+			if(Current != '<') return .Err;
+			Position++;
+			let name = ParseName();
+			if(Current != '>') return .Err;
+			Position++;
+			return (NamedGroups.TryGetValue(name, let group)) ? new BackreferenceExpr(){Group = group} : .Err;
 		default:
 			if(CharacterClass.Shorthands.TryGetValue(Current, let charClass))
 			{
@@ -326,6 +356,14 @@ public class Parser
 			}
 		}
 		return Current;
+	}
+
+	public StringView ParseName()
+	{
+		let pos = Position;
+		while(CharacterClass.Word.Contains(Current)) { Position++; }
+
+		return Regex[pos...Position];
 	}
 
 	public Result<IExpression> ParseString()

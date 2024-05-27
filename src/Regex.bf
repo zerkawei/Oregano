@@ -11,6 +11,7 @@ public class Regex
 
 	private List<Match> matches = new .() ~ DeleteContainerAndDisposeItems!(_);
 	private List<CharacterClass> classes ~ if(_ != null) DeleteContainerAndItems!(_);
+	private Dictionary<StringView, int> namedGroups ~ if(_ != null) delete _;
 
 	private this() {}
 
@@ -23,6 +24,7 @@ public class Regex
 			res.compiledFsm = ast.Compile();
 			res.groupCount  = p.GroupCount;
 			res.classes     = p.Classes;
+			res.namedGroups = p.NamedGroups;
 
 			delete ast;
 			return res;
@@ -35,8 +37,9 @@ public class Regex
 		let automaton = scope Automaton(compiledFsm, new .(compiledFsm.Start, start, groupCount), s);
 
 		let res = automaton.Matches();
-		if(res case .Ok(let m))
+		if(res case .Ok(var m))
 		{
+			m.[Friend]namedCaptures = namedGroups;
 			matches.Add(m);
 			start = m.Captures[0].End;
 		}

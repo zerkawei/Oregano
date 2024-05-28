@@ -1,5 +1,5 @@
 # Oregano
-Oregano is a BFS RegEx engine for the [Beef programming language](https://github.com/beefytech/Beef). The project is currently a work in progress and is not in a fully usable state.
+Oregano is a BFS RegEx engine for the [Beef programming language](https://github.com/beefytech/Beef).
 
 ## Usage
 

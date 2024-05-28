@@ -46,4 +46,45 @@ public class Regex
 	}
 	public Result<Match>   Match(StringView s)   => MatchEnumerator(this, s).GetNext();
 	public MatchEnumerator Matches(StringView s) => MatchEnumerator(this, s);
+
+	public void Replace(String s, StringView replaceStr, int count = int.MaxValue)
+	{
+		var enumerator = MatchEnumerator(this, s);
+		var i = 0;
+
+		while(i++ < count && enumerator.GetNext() case .Ok(let match))
+		{
+			let matchStr = match[0];
+			let start    = match.Captures[0].Start;
+
+			if(matchStr != replaceStr)
+			{
+				s.Remove(start, matchStr.Length);
+				s.Insert(start, replaceStr);
+				enumerator.[Friend]CurPos = start + replaceStr.Length;
+			}
+			match.Dispose();
+		}
+	}
+
+	public void Replace(String s, MatchEvaluator evaluator, int count = int.MaxValue)
+	{
+		var enumerator = MatchEnumerator(this, s);
+		var i = 0;
+
+		while(i++ < count && enumerator.GetNext() case .Ok(let match))
+		{
+			let matchStr   = match[0];
+			let start      = match.Captures[0].Start;
+			let replaceStr = evaluator(match, .. scope .());
+
+			if(matchStr != replaceStr)
+			{
+				s.Remove(start, matchStr.Length);
+				s.Insert(start, replaceStr);
+				enumerator.[Friend]CurPos = start + replaceStr.Length;
+			}
+			match.Dispose();
+		}
+	}
 }

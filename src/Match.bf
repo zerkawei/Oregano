@@ -3,6 +3,8 @@ using System.Collections;
 using Oregano.Automata;
 namespace Oregano;
 
+typealias MatchEvaluator = delegate void(Match match, String replaceStr);
+
 public struct Match : IDisposable
 {
 	private Dictionary<StringView, int> namedCaptures;

@@ -236,12 +236,7 @@ public class Parser
 			return new AnchorExpr(){Type = .StringEnd};
 		case 'k':
 			Position++;
-			if(Current != '<') return .Err;
-			Position++;
-			let name = ParseName();
-			if(Current != '>') return .Err;
-			Position++;
-			return (NamedGroups.TryGetValue(name, let group)) ? new BackreferenceExpr(){Group = group} : .Err;
+			return ParseKBackref();
 		default:
 			if(CharacterClass.Shorthands.TryGetValue(Current, let charClass))
 			{
@@ -250,6 +245,27 @@ public class Parser
 			}
 			return .Err;
 		}
+	}
+
+	public Result<IExpression> ParseKBackref()
+	{
+		if(Current != '<') return .Err;
+		Position++;
+
+		int group = ?;
+		if(Current.IsLetter)
+		{
+			let name = ParseName();
+			if(!NamedGroups.TryGetValue(name, out group)) return .Err;
+		}
+		else
+		{
+			group = ParseInt();
+		}
+
+		if(Current != '>') return .Err;
+		Position++;
+		return new BackreferenceExpr(){Group = group};
 	}
 
 	public Result<IExpression> ParseClass()

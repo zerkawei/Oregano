@@ -4,24 +4,32 @@ namespace Oregano.Automata;
 
 public class Automaton
 {
-	private FSM states;
 	private StringView source;
 	private Cursor candidate;
-	private List<Cursor> cursors = new .() ~ DeleteContainerAndItems!(_);
 
-	public this(FSM states, Cursor cursor, StringView source)
+	public FSM States;
+	public Dictionary<StringView, int> NamedGroups;
+	public List<Cursor> Cursors = new .() ~ DeleteContainerAndItems!(_);
+
+	public this(Regex regex, StringView source)
 	{
-		this.states = states;
+		this.States = regex.States;
+		this.NamedGroups = regex.NamedGroups;
 		this.source = source;
-		cursors.Add(cursor);
+	}
+
+	public this(FSM states, StringView source)
+	{
+		this.States = states;
+		this.source = source;
 	}
 
 	public Result<Match> Matches()
 	{
-		while(cursors.Count > 0) { StepAll(); }
+		while(Cursors.Count > 0) { StepAll(); }
 		if(candidate != null)
 		{
-			let m = Match(source, candidate.Groups);
+			let m = Match(source, candidate.Groups, NamedGroups);
 			candidate.Groups = null;
 			delete candidate;
 			return m;
@@ -32,19 +40,19 @@ public class Automaton
 	private void StepAll()
 	{
 		var i = 0;
-		while(i < cursors.Count)
+		while(i < Cursors.Count)
 		{
-			var c = cursors[i];
+			var c = Cursors[i];
      		if(!Step(c))
 			{
-				if(c.Current == states.End && (candidate == null || candidate.Position < c.Position))
+				if(c.Current == States.End && (candidate == null || candidate.Position < c.Position))
 				{
 					if(candidate != null) delete candidate;
 					c.Groups[0].End = c.Position;
 					candidate = c;
 				}
 				else { delete c; }
-				cursors.RemoveAt(i);
+				Cursors.RemoveAt(i);
 			}
 			else { i++; }
 		}
@@ -62,7 +70,7 @@ public class Automaton
 				{
 					let nCur = new Cursor(c);
 					t.Apply(nCur);
-					cursors.Add(nCur);
+					Cursors.Add(nCur);
 				}
 				else { firstTransition = t; }
 			}

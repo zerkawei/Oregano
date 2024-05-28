@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using Oregano.Automata;
 namespace Oregano;
 
 public struct Match : IDisposable
@@ -19,4 +20,39 @@ public struct Match : IDisposable
 	public StringView this[StringView name] => this[namedCaptures[name]];
 
 	public void Dispose() { delete Captures; }
+}
+
+public struct MatchEnumerator : IEnumerator<Match>
+{
+	Regex      Regex;
+	StringView Source;
+	int        CurPos;
+
+	public this(Regex regex, StringView source)
+	{
+		CurPos = 0;
+		Regex  = regex;
+		Source = source;
+	}
+
+	public Result<Match> GetNext() mut
+	{
+		let automaton = scope Automaton(Regex, Source);
+
+		Result<Match> res = ?;
+		bool   foundMatch = false;
+
+		while(!foundMatch && CurPos < Source.Length)
+		{
+			automaton.Cursors.Add(new .(Regex.States.Start, CurPos, Regex.GroupCount));
+
+			if((res = automaton.Matches()) case .Ok(let m))
+			{
+				CurPos     = m.Captures[0].End;
+				foundMatch = true;
+			}
+			else { CurPos++; }
+		}
+		return res;
+	}
 }

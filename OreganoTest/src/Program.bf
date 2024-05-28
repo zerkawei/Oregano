@@ -17,13 +17,14 @@ class Program
 	{
 		let regex = Regex.Compile(reg);
 
-		for(let m in regex.MatchAll(str))
+		for(let m in regex.Matches(str))
 		{
 			Console.WriteLine("Match :");
 			for(let i < m.Captures.Count)
 			{
 				Console.WriteLine(scope $"    Group {i}: {m[i]}");
 			}
+			m.Dispose();
 		}
 
 		delete regex;

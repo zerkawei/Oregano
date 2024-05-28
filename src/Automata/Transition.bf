@@ -64,7 +64,8 @@ public class NegativeLookaround : Epsilon
 
 		if(Reverse) nCur.Position--;
 
-		let automaton = scope Automaton(Inner, nCur, s);
+		let automaton = scope Automaton(Inner, s);
+		automaton.Cursors.Add(nCur);
 		if(automaton.Matches() case .Ok(let val))
 		{
 			val.Dispose();

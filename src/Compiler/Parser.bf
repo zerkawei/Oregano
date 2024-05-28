@@ -4,15 +4,16 @@ namespace Oregano.Compiler;
 
 public class Parser
 {
-	public static char8[?] reserved = .('.','$','^','\\','(',')','*','+','[',']','|','{','}','?','\0');
+	static char8[?] reserved = .('.','$','^','\\','(',')','*','+','[',']','|','{','}','?','\0');
+	StringView Regex;
+	int Position;
 
-	public StringView Regex;
-	public int Position;
-	public int GroupCount;
+
 	public List<CharacterClass> Classes;
 	public Dictionary<StringView, int> NamedGroups;
+	public int GroupCount;
 
-	public char8 Current => (Position < Regex.Length) ? Regex[Position] : '\0';
+	char8 Current => (Position < Regex.Length) ? Regex[Position] : '\0';
 
 	public this(StringView regex)
 	{

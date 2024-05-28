@@ -14,21 +14,25 @@ public class Regex
 
 	private this() {}
 
-	public static Regex Compile(StringView regex)
+	public static Result<Regex> Compile(StringView regexStr)
  	{
-		let p = scope Parser(regex);
-		if(p.ParseExpressions() case .Ok(let ast))
+		let p = scope Parser(regexStr);
+		let res = p.ParseExpressions();
+		if(res case .Ok(let ast))
 		{
-			let res = new Regex();
-			res.States = ast.Compile();
-			res.GroupCount  = p.GroupCount;
-			res.classes     = p.Classes;
-			res.NamedGroups = p.NamedGroups;
+			let regex         = new Regex();
+			regex.States      = ast.Compile();
+			regex.GroupCount  = p.GroupCount;
+			regex.classes     = p.Classes;
+			regex.NamedGroups = p.NamedGroups;
 
 			delete ast;
-			return res;
+			return regex;
 		}
-		return null;
+
+		delete p.Classes;
+		delete p.NamedGroups;
+		return .Err;
 	}
 
 	public bool IsMatch(StringView s)

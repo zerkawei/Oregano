@@ -15,18 +15,18 @@ class Program
 
 	public static void RegexMatch(StringView reg, StringView str)
 	{
-		let regex = Regex.Compile(reg);
-
-		for(let m in regex.Matches(str))
+		if(Regex.Compile(reg) case .Ok(let regex))
 		{
-			Console.WriteLine("Match :");
-			for(let i < m.Captures.Count)
+			for(let m in regex.Matches(str))
 			{
-				Console.WriteLine(scope $"    Group {i}: {m[i]}");
+				Console.WriteLine("Match :");
+				for(let i < m.Captures.Count)
+				{
+					Console.WriteLine(scope $"    Group {i}: {m[i]}");
+				}
+				m.Dispose();
 			}
-			m.Dispose();
+			delete regex;
 		}
-
-		delete regex;
 	}
 }

@@ -1,6 +1,34 @@
 # Oregano
 Oregano is a BFS RegEx engine for the [Beef programming language](https://github.com/beefytech/Beef). The project is currently a work in progress and is not in a fully usable state.
 
+## Usage
+
+The `Regex.Compile` method is used to create regex objects.
+```csharp
+let regex = Regex.Compile("([\"'])\w+\\1").GetValueOrDefault();
+```
+The `IsMatch` method is used to test if a string matches a regex.
+```csharp
+if(regex.IsMatch("example string"))
+{
+    ...
+}
+```
+The `Match` and `Matches` methods are used to get the match(es) in the specified string. (Note: the returned `Match` must be disposed)
+```csharp
+for(let match in regex.Matches("example string"))
+{
+    ...
+    match.Dispose();
+}
+```
+The `Replace` method is used to replace the matched string(s) using a constant or a function
+```csharp
+let str = scope String("example string")
+regex.Replace(str, "replace string")
+regex.Replace(str, scope (match, replaceStr) => { ... });
+```
+
 ## Supported regex features
 ### Character classes
 - `.` Matches any character except new line
@@ -26,9 +54,11 @@ Oregano is a BFS RegEx engine for the [Beef programming language](https://github
 
 ### Groups
 - `(expr)` Capturing group
+- `\1`|`\k<10>` Backreference via index
+- `(?<name>expr)` Named capturing group
+- `k<name>` Backreference via name
 - `(?:expr)` Non capturing group
 - `(?=expr)` Lookahead
 - `(?!expr)` Negative lookahead
 - `(?<=expr)` Lookbehind
 - `(?<!expr)` Negative Lookbehind
-- `\1` Backreference

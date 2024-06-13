@@ -47,7 +47,7 @@ public class LookaroundEntry : Epsilon
 	public override void Apply(Cursor c)
 	{
 		base.Apply(c);
-		c.Positions.Add(.(Reverse ? c.Position - 1 : c.Position, Reverse));
+		c.Positions.Add(.(Reverse ? c.Position - 1 : c.Position, c.Current, Reverse));
 	}
 }
 
@@ -55,23 +55,19 @@ public class NegativeLookaround : Epsilon
 {
 	public bool Reverse;
 	public FSM  Inner ~ _.Dispose();
-
-	public override bool Matches(Cursor c, StringView s)
+	public override void Apply(Cursor c)
 	{
-		let nCur = new Cursor(c);
-		nCur.Reverse = Reverse;
-		nCur.Current = Inner.Start;
+		base.Apply(c);
+		c.Positions.Add(.(Reverse ? c.Position - 1 : c.Position, Inner.Start, Reverse, true));
+	}
+}
 
-		if(Reverse) nCur.Position--;
-
-		let automaton = scope Automaton(Inner, s);
-		automaton.Cursors.Add(nCur);
-		if(automaton.Matches() case .Ok(let val))
-		{
-			val.Dispose();
-			return false;
-		}
-		return true;
+public class NegativeLookaroundExit : Epsilon
+{
+	public override void Apply(Cursor c)
+	{
+		base.Apply(c);
+		c.CanBacktrack = false;
 	}
 }
 

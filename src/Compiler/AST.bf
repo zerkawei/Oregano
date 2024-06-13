@@ -203,7 +203,9 @@ public class LookaroundExpr : IExpression
 		}
 		else
 		{
+			let negend = new State();
 			start.Transitions.Add(new NegativeLookaround(){Target = end, Reverse = Behind, Inner = fsm});
+			fsm.End.Transitions.Add(new NegativeLookaroundExit(){Target = negend});
 		}
 		
 		return .(start, end);

@@ -76,7 +76,16 @@ public class Automaton
 			}
 		}
 
-		firstTransition?.Apply(c);
-		return firstTransition != null;
+		if(firstTransition != null)
+		{
+			firstTransition.Apply(c);
+			return true;
+		}
+		if(c.CanBacktrack)
+		{
+			c.Positions.RemoveAt(c.Positions.Count - 1);
+			return true;
+		}
+		return false;
 	}
 }

@@ -47,7 +47,7 @@ public class LookaroundEntry : Epsilon
 	public override void Apply(Cursor c)
 	{
 		base.Apply(c);
-		c.Positions.Add(.(Reverse ? c.Position - 1 : c.Position, c.Current, Reverse));
+		c.PushState(.(Reverse ? c.Position - 1 : c.Position, c.Current, Reverse));
 	}
 }
 
@@ -58,7 +58,7 @@ public class NegativeLookaround : Epsilon
 	public override void Apply(Cursor c)
 	{
 		base.Apply(c);
-		c.Positions.Add(.(Reverse ? c.Position - 1 : c.Position, Inner.Start, Reverse, true));
+		c.PushState(.(Reverse ? c.Position - 1 : c.Position, Inner.Start, Reverse, true));
 	}
 }
 
@@ -76,7 +76,7 @@ public class LookaroundExit : Epsilon
 	public override void Apply(Cursor c)
 	{
 		base.Apply(c);
-		c.Positions.RemoveAt(c.Positions.Count - 1);
+		c.PopState();
 	}
 }
 
@@ -85,7 +85,7 @@ public class RepeatEntry : Epsilon
 	public override void Apply(Cursor c)
 	{
 		base.Apply(c);
-		c.RepeatCount.Add(1);
+		c.PushCardinality(1);
 	}
 }
 
@@ -120,22 +120,22 @@ public class WordBoundary : Epsilon
 public class MinimumCardinality : Epsilon
 {
 	public int lowerBound;
-	public override bool Matches(Cursor c, StringView s) => (c.RepeatCount[c.RepeatCount.Count - 1] >= lowerBound);
+	public override bool Matches(Cursor c, StringView s) => (c.RepeatCount >= lowerBound);
 	public override void Apply(Cursor c)
 	{
 		base.Apply(c);
-		c.RepeatCount.RemoveAt(c.RepeatCount.Count - 1);
+		c.PopCardinality();
 	}
 }
 
 public class MaximumCardinality : Epsilon
 {
 	public int upperBound;
-	public override bool Matches(Cursor c, StringView s) => (c.RepeatCount[c.RepeatCount.Count - 1] <= upperBound);
+	public override bool Matches(Cursor c, StringView s) => (c.RepeatCount <= upperBound);
 	public override void Apply(Cursor c)
 	{
 		base.Apply(c);
-		c.RepeatCount[c.RepeatCount.Count - 1]++;
+		c.RepeatCount++;
 	}
 }
 

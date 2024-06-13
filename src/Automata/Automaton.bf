@@ -83,7 +83,7 @@ public class Automaton
 		}
 		if(c.CanBacktrack)
 		{
-			c.Positions.RemoveAt(c.Positions.Count - 1);
+			c.PopState();
 			return true;
 		}
 		return false;

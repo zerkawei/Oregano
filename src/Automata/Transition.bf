@@ -82,10 +82,21 @@ public class LookaroundExit : Epsilon
 
 public class RepeatEntry : Epsilon
 {
+	public int Cardinality = 1;
 	public override void Apply(Cursor c)
 	{
 		base.Apply(c);
-		c.PushCardinality(1);
+		c.PushCardinality(Cardinality);
+	}
+}
+
+public class LazyTryContinue : Epsilon
+{
+	public State Backtrack;
+	public override void Apply(Cursor c)
+	{
+		c.Current = Backtrack;
+		c.PushState(.(c.Position, Target, c.Reverse, true));
 	}
 }
 
@@ -137,6 +148,18 @@ public class MaximumCardinality : Epsilon
 		base.Apply(c);
 		c.RepeatCount++;
 	}
+}
+
+public class LazyUntilMinimum : Epsilon
+{
+	public int lowerBound;
+	public override bool Matches(Cursor c, StringView s) => (c.RepeatCount < lowerBound);
+}
+
+public class LazyMinimum : Epsilon
+{
+	public int lowerBound;
+	public override bool Matches(Cursor c, StringView s) => (c.RepeatCount >= lowerBound);
 }
 
 // MATCHERS

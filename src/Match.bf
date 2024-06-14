@@ -58,3 +58,36 @@ public struct MatchEnumerator : IEnumerator<Match>
 		return res;
 	}
 }
+
+public struct ParallelMatchEnumerator : IEnumerator<Match>
+{
+	Regex      Regex;
+	StringView Source;
+	int        CurPos;
+
+	public this(Regex regex, StringView source)
+	{
+		CurPos = 0;
+		Regex  = regex;
+		Source = source;
+	}
+
+	public Result<Match> GetNext() mut
+	{
+		let automaton = scope ParallelAutomaton(Regex, Source);
+
+		Result<Match> res = ?;
+		bool   foundMatch = false;
+
+		while(!foundMatch && CurPos < Source.Length)
+		{
+			if((res = automaton.Matches(new .(Regex.States.Start, CurPos, Regex.GroupCount))) case .Ok(let m))
+			{
+				CurPos     = m.Captures[0].End;
+				foundMatch = true;
+			}
+			else { CurPos++; }
+		}
+		return res;
+	}
+}

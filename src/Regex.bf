@@ -47,6 +47,19 @@ public class Regex
 	public Result<Match>   Match(StringView s)   => MatchEnumerator(this, s).GetNext();
 	public MatchEnumerator Matches(StringView s) => MatchEnumerator(this, s);
 
+	public bool IsMatchParallel(StringView s)
+	{
+		if(MatchParallel(s) case .Ok(let m))
+		{
+			m.Dispose();
+			return true;
+		}
+		return false;
+	}
+	public Result<Match>           MatchParallel(StringView s)   => ParallelMatchEnumerator(this, s).GetNext();
+	public ParallelMatchEnumerator MatchesParallel(StringView s) => ParallelMatchEnumerator(this, s);
+
+
 	public void Replace(String s, StringView replaceStr, int count = int.MaxValue)
 	{
 		var enumerator = MatchEnumerator(this, s);

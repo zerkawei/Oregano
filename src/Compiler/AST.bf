@@ -109,6 +109,31 @@ public class CardinalityExpr : IExpression
 	}
 }
 
+public class LazyCardinalityExpr : IExpression
+{
+	public IExpression Child ~ delete _;
+	public Range       Cardinality;
+
+	public FSM Compile()
+	{
+		let start       = new State();
+		let beforeInner = new State();
+		let branch      = new State();
+		let afterInner  = new State();
+		let end         = new State();
+		let fsm   = Child.Compile();
+
+		start.Transitions.Add(new RepeatEntry(){Cardinality = 0, Target = branch});
+		branch.Transitions.Add(new LazyUntilMinimum(){lowerBound = Cardinality.Start, Target = beforeInner});
+		branch.Transitions.Add(new LazyMinimum(){lowerBound = Cardinality.Start, Target = afterInner});
+		beforeInner.Transitions.Add(new MaximumCardinality(){upperBound = Cardinality.End, Target = fsm.Start});
+		fsm.End.Transitions.Add(new Epsilon(){Target = branch});
+		afterInner.Transitions.Add(new LazyTryContinue(){BacktrackTo = beforeInner, Target = end});
+
+		return .(start, end);
+	}
+}
+
 public class OrExpr : IExpression
 {
 	public IExpression Left  ~ delete _;

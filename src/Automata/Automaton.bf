@@ -81,7 +81,7 @@ public class Automaton
 			firstTransition.Apply(c);
 			return true;
 		}
-		if(c.CanBacktrack)
+		if(c.CanBacktrack && c.Current != States.End)
 		{
 			c.PopState();
 			return true;

@@ -44,6 +44,7 @@ regex.Replace(str, scope (match, replaceStr) => { ... });
 - `+` Matches one or more
 - `?` Matches zero or one
 - `{m,n}` Matches at least m and at most n
+- `*?`|`+?`|`??`|`{m,n}?` Lazy quantifiers
 
 ### Assertions
 - `^` Start of line assertion

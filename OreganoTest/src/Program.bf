@@ -7,6 +7,7 @@ class Program
 	public static void Main()
 	{
 		RegexMatch("([\"'])a+\\1", "\"a\" 'aaaa'");
+		RegexMatch("<(?<tag>.+?)>(?<inner>.*?)</\\k<tag>>", "<div>Test</div>");
 		RegexMatch("<(?<tag>[^>]+)>(?<inner>[^<]*)</\\k<tag>>", "<div>Test</div>");
 		RegexMatch("(?<![$€])\\d+","Buy 99 for $2");
 

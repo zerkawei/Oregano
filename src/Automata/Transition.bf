@@ -92,10 +92,10 @@ public class RepeatEntry : Epsilon
 
 public class LazyTryContinue : Epsilon
 {
-	public State Backtrack;
+	public State BacktrackTo;
 	public override void Apply(Cursor c)
 	{
-		c.Current = Backtrack;
+		c.Current = BacktrackTo;
 		c.PushState(.(c.Position, Target, c.Reverse, true));
 	}
 }

@@ -51,12 +51,27 @@ public class Parser
 		{
 		case '*':
 			Position++;
+			if(Current == '?')
+			{
+				Position++;
+				return new LazyCardinalityExpr(){Child = child, Cardinality = .(0, int.MaxValue)};
+			}	
 			return new StarExpr(){Child = child};
 		case '+':
 			Position++;
+			if(Current == '?')
+			{
+				Position++;
+				return new LazyCardinalityExpr(){Child = child, Cardinality = .(1, int.MaxValue)};
+			}	
 			return new PlusExpr(){Child = child};
 		case '?':
 			Position++;
+			if(Current == '?')
+			{
+				Position++;
+				return new LazyCardinalityExpr(){Child = child, Cardinality = .(0, 1)};
+			}	
 			return new OptionalExpr(){Child = child};
 		case '{':
 			Position++;
@@ -72,6 +87,11 @@ public class Parser
 		if(Current == '}')
 		{
 			Position++;
+			if(Current == '?')
+			{
+				Position++;
+				return new LazyCardinalityExpr(){Child = child, Cardinality = .(start, start)};
+			}	
 			return new CardinalityExpr(){Child = child, Cardinality = .(start, start)};
 		}
 		else if(Current != ',') { return .Err; }
@@ -81,6 +101,12 @@ public class Parser
 
 		if(Current != '}') return .Err;
 		Position++;
+
+		if(Current == '?')
+		{
+			Position++;
+			return new LazyCardinalityExpr(){Child = child, Cardinality = .(start, (end == 0) ? int.MaxValue : end)};
+		}	
 
 		return new CardinalityExpr(){Child = child, Cardinality = .(start, (end == 0) ? int.MaxValue : end)};
 	}
